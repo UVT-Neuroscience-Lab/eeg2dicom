@@ -55,7 +55,7 @@
     "AuthenticationEnabled" : true,
 
     "RegisteredUsers" : {
-       "edi" : "123"
+       "david" : "123"
     },
 
 
@@ -66,7 +66,7 @@
       * store (shipped in the DCMTK distribution) started by the
       * command line "storescp 2000".
       **/
-      "David" : [ "ORTHANC_BACKUP", "10.231.31.40", 4242 ]
+      "edi" : [ "ORTHANC_BACKUP", "10.231.31.40", 4242 ]
     },
 
     // The list of the known Orthanc peers
@@ -76,7 +76,7 @@
       * followed by the username/password pair (if the password
       * protection is enabled on the peer).
       **/
-       "David"  : [ "http://10.231.31.40:8042/", "david", "123" ]
+       "edi"  : [ "http://10.231.31.40:8042/", "david", "123" ]
       // "peer2" : [ "http://localhost:8044/" ]
     }
   }
