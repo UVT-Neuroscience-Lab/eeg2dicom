@@ -1,0 +1,82 @@
+  {
+    /**
+    * General configuration of Orthanc
+    **/
+
+    // The logical name of this instance of Orthanc. This one is
+    // displayed in Orthanc Explorer and at the URI "/system".
+    "Name" : "MyOrthanc",
+
+    // Path to the directory that holds the heavyweight files
+    // (i.e. the raw DICOM instances)
+    "StorageDirectory" : "OrthancStorage",
+
+    // Path to the directory that holds the SQLite index (if unset,
+    // the value of StorageDirectory is used). This index could be
+    // stored on a RAM-drive or a SSD device for performance reasons.
+    "IndexDirectory" : "OrthancStorage",
+
+
+    "StorageCompression" : false,
+
+    "MaximumStorageSize" : 0,
+
+
+    "MaximumPatientCount" : 0,
+    
+    "LuaScripts" : [
+    ],
+
+    "UserMetadata" : {
+
+    },
+
+
+    "HttpPort" : 8042,
+
+
+
+    "DicomAet" : "ORTHANC_EDI",
+
+    "DicomCheckCalledAet" : false,
+
+    "DicomPort" : 4242,
+
+
+
+    "RemoteAccessAllowed" : true,
+
+
+    "SslEnabled" : false,
+
+
+    "SslCertificate" : "certificate.pem",
+
+    "AuthenticationEnabled" : true,
+
+    "RegisteredUsers" : {
+       "edi" : "123"
+    },
+
+
+    "DicomModalities" : {
+      /**
+      * Uncommenting the following line would enable Orthanc to
+      * connect to an instance of the "storescp" open-source DICOM
+      * store (shipped in the DCMTK distribution) started by the
+      * command line "storescp 2000".
+      **/
+      // "sample" : [ "STORESCP", "localhost", 2000 ]
+    },
+
+    // The list of the known Orthanc peers
+    "OrthancPeers" : {
+      /**
+      * Each line gives the base URL of an Orthanc peer, possibly
+      * followed by the username/password pair (if the password
+      * protection is enabled on the peer).
+      **/
+      // "peer"  : [ "http://localhost:8043/", "alice", "alicePassword" ]
+      // "peer2" : [ "http://localhost:8044/" ]
+    }
+  }
