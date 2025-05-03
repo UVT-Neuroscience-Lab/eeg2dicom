@@ -9,23 +9,17 @@ from pynetdicom import AE, debug_logger
 debug_logger()
 
 # Configure Application Entity
-ae = AE(ae_title=b'MY_CLIENT_AET')
+ae = AE(ae_title=b'MY_LAPTOP')
 ae.add_requested_context(pydicom.uid.SecondaryCaptureImageStorage)
 
 # Connect to Orthanc
 assoc = ae.associate(
     "localhost",  # Orthanc server IP
     4242,         # Orthanc DICOM port
-    ae_title=b'ORTHANC'  # Orthanc's AE Title
+    ae_title=b'ORTHANC_EDI'  # Orthanc's AE Title
 )
 
-if assoc.is_established:
-    dataset = pydicom.dcmread('output_20231015.dcm')
-    status = assoc.send_c_store(dataset)
-    print(f"C-STORE Status: {status.Status}")
-    assoc.release()
-else:
-    print("Association rejected")
+
 
 # ======================
 # ARG PARSING
@@ -150,3 +144,11 @@ ds.add_new(csv_tag, 'OB', csv_bytes)
 ds.save_as(output_path, write_like_original=False)
 print(f"Successfully created DICOM file at: {output_path}")
 print(f"CSV size: {len(csv_bytes)} bytes | Image size: {rgb_img.size} pixels")
+
+if assoc.is_established:
+    dataset = pydicom.dcmread(output_path)
+    status = assoc.send_c_store(dataset)
+    print(f"C-STORE Status: {status.Status}")
+    assoc.release()
+else:
+    print("Association rejected")
