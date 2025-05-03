@@ -1,9 +1,51 @@
 import pydicom
-import csv
 import datetime
 from io import BytesIO
 from PIL import Image
-import tempfile
+import argparse
+from pynetdicom import AE, debug_logger
+
+# Enable debugging
+debug_logger()
+
+# Configure Application Entity
+ae = AE(ae_title=b'MY_CLIENT_AET')
+ae.add_requested_context(pydicom.uid.SecondaryCaptureImageStorage)
+
+# Connect to Orthanc
+assoc = ae.associate(
+    "localhost",  # Orthanc server IP
+    4242,         # Orthanc DICOM port
+    ae_title=b'ORTHANC'  # Orthanc's AE Title
+)
+
+if assoc.is_established:
+    dataset = pydicom.dcmread('output_20231015.dcm')
+    status = assoc.send_c_store(dataset)
+    print(f"C-STORE Status: {status.Status}")
+    assoc.release()
+else:
+    print("Association rejected")
+
+# ======================
+# ARG PARSING
+# ======================
+
+parser = argparse.ArgumentParser(description='Create a DICOM file with BCI data.')
+parser.add_argument('--name', required=True, type=str, default='John Smith', help='Patient name')
+parser.add_argument('--id', required=True, type=str, default='1234567', help='Patient ID')
+parser.add_argument('--birthdate', required=True, type=str, default='19900101', help='Patient birth date (YYYYMMDD)')
+parser.add_argument('--sex', required=True, type=str, default='O', help='Patient sex (M/F/O)')
+parser.add_argument('--size', required=True, type=int, default=170, help='Patient size (cm)')
+parser.add_argument('--weight', required=True, type=int, default=70, help='Patient weight (kg)')
+parser.add_argument('--address', required=True, type=str, default='123 Main St, Anytown, USA', help='Patient address')
+parser.add_argument('--phone', required=True, type=str, default='555-1234', help='Patient phone number')
+parser.add_argument('--study_date', type=str, default=f'{datetime.date.today().strftime('%Y%m%d')}', help='Study date (YYYYMMDD)')
+parser.add_argument('--study_time', type=str, default=f'{datetime.datetime.now().strftime('%H%M%S')}', help='Study time (HHMMSS)')
+parser.add_argument('--study_id', type=str, default='', help='Study ID')
+parser.add_argument('--series_number', type=str, default='1', help='Series number')
+parser.add_argument('--accession_number', type=str, default='', help='Accession number')
+parser.add_argument('--csv', type=str, default='../data/sample_recording1.csv', help='Path to CSV file')
 
 # ======================
 # CSV DATA HANDLING
@@ -54,16 +96,29 @@ ds.is_implicit_VR = False
 # STANDARD DICOM TAGS
 # ======================
 # Patient Information
-ds.PatientName = "David merge"
-ds.PatientID = "6969669"
-ds.PatientBirthDate = ""
+ds.PatientName = parser.parse_args().name
+ds.PatientID = parser.parse_args().id
+ds.PatientBirthDate = parser.parse_args().birthdate
+ds.PatientSex = parser.parse_args().sex
+ds.PatientSize = parser.parse_args().size
+ds.PatientWeight = parser.parse_args().weight
+ds.PatientAddress = parser.parse_args().address
+ds.PatientTelephoneNumbers = parser.parse_args().phone
 
 # Study Information
-ds.StudyDate = datetime.date.today().strftime('%Y%m%d')
-ds.StudyTime = datetime.datetime.now().strftime('%H%M%S')
+ds.StudyDate = parser.parse_args().study_date
+ds.StudyTime = parser.parse_args().study_time
+ds.StudyID = parser.parse_args().study_id
+ds.SeriesNumber = parser.parse_args().series_number
+ds.AccessionNumber = parser.parse_args().accession_number
 ds.StudyInstanceUID = pydicom.uid.generate_uid()
 ds.SeriesInstanceUID = pydicom.uid.generate_uid()
-ds.SOPInstanceUID = file_meta.MediaStorageSOPInstanceUID
+ds.SOPClassUID = pydicom.uid.SecondaryCaptureImageStorage
+ds.SOPInstanceUID = file_meta.MediaStorageSOPInstanceUID 
+
+# Temporal context
+ds.InstanceCreationDate = datetime.date.today().strftime('%Y%m%d')
+ds.InstanceCreationTime = datetime.datetime.now().strftime('%H%M%S.%f') 
 
 # Image Parameters
 ds.Modality = "OT"  # Other

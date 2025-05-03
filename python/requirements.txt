@@ -1,1 +1,2 @@
-spydcmtk~=1.2.10
+pydicom-2.4.4 
+pynetdicom-2.1.1
