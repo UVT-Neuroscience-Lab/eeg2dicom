@@ -76,7 +76,7 @@
       * followed by the username/password pair (if the password
       * protection is enabled on the peer).
       **/
-      // "peer"  : [ "http://localhost:8043/", "alice", "alicePassword" ]
+       "peer"  : [ "http://10.231.31.40:8042/", "david", "123" ]
       // "peer2" : [ "http://localhost:8044/" ]
     }
   }
