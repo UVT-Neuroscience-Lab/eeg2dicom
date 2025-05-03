@@ -11,7 +11,7 @@ y7_values = []
 
 x_values = []
 
-with open("/Users/AnonymousSkizophrenic/Documents/BCI-to-DICOM/Coding/Data/UnicornRecorder_11_03_2025_07_49_540.csv", "r") as file:
+with open("[Insert Directory]", "r") as file:
     for count, line in enumerate(file):
         line = line.strip()
         if line:
