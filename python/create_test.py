@@ -4,6 +4,7 @@ from io import BytesIO
 from PIL import Image
 import argparse
 from pynetdicom import AE, debug_logger
+import matplotlib.pyplot as plt
 
 # Enable debugging
 debug_logger()
@@ -52,7 +53,27 @@ csv_bytes = csv_data.encode('utf-8')
 # ======================
 # IMAGE HANDLING
 # ======================
-img_path = '../data/sample_image.jpg'
+y_values = [[] for _ in range(8)]
+x_values = []
+
+with open(f"{parser.parse_args().csv}", "r") as file:
+    for line in file:
+        if stripped := line.strip():
+            parts = list(map(float, stripped.split(',')))
+            for i in range(8):
+                y_values[i].append(parts[i])
+            x_values.append(parts[8])
+
+# Create subplots and plot
+fig, axes = plt.subplots(8, 1)
+fig.suptitle('Vertically stacked subplots')
+for ax, ys in zip(axes, y_values):
+    ax.plot(x_values, ys)
+
+fig.tight_layout(pad=0.005)
+fig.savefig("tmp_plot.jpg", format='jpg', dpi=300)
+
+img_path = "tmp_plot.jpg"
 
 # Open and convert to RGB
 with Image.open(img_path) as img:
