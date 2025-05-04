@@ -9,18 +9,19 @@ import matplotlib.pyplot as plt
 # Enable debugging
 debug_logger()
 
+# ======================
+# SERVER CONNECTION
+# ======================
+
 # Configure Application Entity
 ae = AE(ae_title=b'MY_LAPTOP')
 ae.add_requested_context(pydicom.uid.SecondaryCaptureImageStorage)
 
-# Connect to Orthanc
 assoc = ae.associate(
     "localhost",  # Orthanc server IP
     4242,         # Orthanc DICOM port
     ae_title=b'ORTHANC_EDI'  # Orthanc's AE Title
 )
-
-
 
 # ======================
 # ARG PARSING
@@ -41,11 +42,16 @@ parser.add_argument('--study_id', type=str, default='', help='Study ID')
 parser.add_argument('--series_number', type=str, default='1', help='Series number')
 parser.add_argument('--accession_number', type=str, default='', help='Accession number')
 parser.add_argument('--csv', type=str, default='../data/sample_recording1.csv', help='Path to CSV file')
+parser.add_argument('--picture', type=str, default='../data/sample_image.jpg', help='Path to picture file')
+# parser.add_argument('--server_ip', type=str, default='localhost', help='Server IP address')
+# parser.add_argument('--server_port', type=int, default=4242, help='Server port number')
+# parser.add_argument('--ae-title', type=str, default='ORTHANC_EDI', help='AE Title of the server')
+
 
 # ======================
 # CSV DATA HANDLING
 # ======================
-csv_path = '../data/sample_recording1.csv'
+csv_path = parser.parse_args().csv
 with open(csv_path, 'r') as f:
     csv_data = f.read()
 csv_bytes = csv_data.encode('utf-8')
@@ -53,40 +59,36 @@ csv_bytes = csv_data.encode('utf-8')
 # ======================
 # IMAGE HANDLING
 # ======================
-y_values = [[] for _ in range(8)]
-x_values = []
 
-with open(f"{parser.parse_args().csv}", "r") as file:
-    for line in file:
-        if stripped := line.strip():
-            parts = list(map(float, stripped.split(',')))
-            for i in range(8):
-                y_values[i].append(parts[i])
-            x_values.append(parts[8])
+img_path = parser.parse_args().picture
 
-# Create subplots and plot
-fig, axes = plt.subplots(8, 1)
-fig.suptitle('Vertically stacked subplots')
-for ax, ys in zip(axes, y_values):
-    ax.plot(x_values, ys)
-
-fig.tight_layout(pad=0.005)
-fig.savefig("tmp_plot.jpg", format='jpg', dpi=300)
-
-img_path = "tmp_plot.jpg"
-
-# Open and convert to RGB
 with Image.open(img_path) as img:
     rgb_img = img.convert('RGB')
     
-    # Get raw pixel data as bytes
-    with BytesIO() as buffer:
-        rgb_img.save(buffer, format="BMP")  # BMP gives uncompressed bytes
-        pixel_bytes = buffer.getvalue()
+    # Fix orientation based on EXIF data
+    if hasattr(img, '_getexif'):
+        exif = img._getexif()
+        if exif:
+            # Rotate according to EXIF orientation tag (0x0112)
+            orientation = exif.get(0x0112, 1)
+            if orientation > 1: 
+                rgb_img = Image.Image.rotate(rgb_img, {
+                    2: 0,
+                    3: 180,
+                    4: 0,
+                    5: 90,
+                    6: 90,
+                    7: -90,
+                    8: -90
+                }[orientation])
 
-# BMP header is 54 bytes (we need to skip it for raw pixel data)
-bmp_header_size = 54
-raw_pixels = pixel_bytes[bmp_header_size:]
+    # Convert to numpy array for proper channel handling
+    import numpy as np
+    img_array = np.array(rgb_img)
+    
+    # Convert to bytes in correct order (R, G, B interleaved)
+    raw_pixels = img_array.tobytes()
+
 
 # ======================
 # DICOM FILE CREATION
@@ -147,6 +149,11 @@ ds.HighBit = 7
 ds.PixelRepresentation = 0
 ds.PlanarConfiguration = 0  # Interleaved color
 ds.PixelData = raw_pixels
+ds.WindowCenter = int(ds.BitsStored/2)
+ds.WindowWidth = ds.BitsStored
+ds.RescaleIntercept = 0
+ds.RescaleSlope = 1
+
 
 # ======================
 # PRIVATE TAGS (For CSV Data)
@@ -165,6 +172,10 @@ ds.add_new(csv_tag, 'OB', csv_bytes)
 ds.save_as(output_path, write_like_original=False)
 print(f"Successfully created DICOM file at: {output_path}")
 print(f"CSV size: {len(csv_bytes)} bytes | Image size: {rgb_img.size} pixels")
+
+# ======================
+# PUSHING TO SERVER
+# ======================
 
 if assoc.is_established:
     dataset = pydicom.dcmread(output_path)
