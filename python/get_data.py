@@ -34,11 +34,12 @@ def get_patient_data(patient_id):
     url= f"{BASE_URL}/instances/{patient_id}/file"
     response = requests.get(url, auth=auth)
     if response.status_code == 200:
-        with open(f"BCI-to-DICOM/data/downloaded_data/{patient_id}.dcm", "wb") as f:
+        with open(f"../data/downloaded_data/{patient_id}.dcm", "wb") as f:
             f.write(response.content)
         print(f"Patient data saved to {patient_id}.dcm")
     else:
         print(f"Error fetching data for patient {patient_id}: {response.status_code}")
 
-#get_patient_names()
-#get_patient_data(name_instance_dict["Edi"])
+get_patient_names()
+#print(name_instance_dict["Erik"])
+#get_patient_data(name_instance_dict["Erik"])
